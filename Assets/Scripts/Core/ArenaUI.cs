@@ -37,6 +37,9 @@ public class ArenaUI : MonoBehaviour
     /// <summary>プレイヤーの状態を読み取るための参照</summary>
     public PlayerController playerController;
 
+    /// <summary>ウェーブ状態を読み取るための参照（Start で自動検索）</summary>
+    private WaveManager waveManager;
+
     // ──────────────────────────────────────────────
     //  HUD の UI 要素（Awake で動的生成）
     // ──────────────────────────────────────────────
@@ -71,6 +74,12 @@ public class ArenaUI : MonoBehaviour
         EnemyController.OnEnemyDied += OnEnemyKilled;
     }
 
+    private void Start()
+    {
+        // WaveManager は ArenaBootstrapper が生成するため Start で検索する
+        waveManager = FindAnyObjectByType<WaveManager>();
+    }
+
     private void OnDestroy()
     {
         EnemyController.OnEnemyDied -= OnEnemyKilled;
@@ -87,6 +96,7 @@ public class ArenaUI : MonoBehaviour
         UpdateGasGauge();
         UpdateHpText();
         UpdateCoinText();
+        UpdateStageText();
     }
 
     // ──────────────────────────────────────────────
@@ -133,6 +143,30 @@ public class ArenaUI : MonoBehaviour
     }
 
     // ──────────────────────────────────────────────
+    //  ステージテキスト更新
+    // ──────────────────────────────────────────────
+
+    /// <summary>
+    /// WaveManager からウェーブ番号・カウントダウンを取得して表示する。
+    /// カウントダウン中は「NEXT WAVE 2.5s」のように残り秒数を示す。
+    /// </summary>
+    private void UpdateStageText()
+    {
+        if (waveManager == null) return;
+
+        if (waveManager.WaveCooldownRemaining > 0.05f)
+        {
+            // カウントダウン表示（小数1桁）
+            stageText.text = "NEXT WAVE  " + waveManager.WaveCooldownRemaining.ToString("F1") + "s";
+        }
+        else
+        {
+            stageText.text = "WAVE  " + waveManager.CurrentWave.ToString("D2")
+                + "   残り " + waveManager.AliveEnemyCount + "体";
+        }
+    }
+
+    // ──────────────────────────────────────────────
     //  敵撃破イベント受信
     // ──────────────────────────────────────────────
 
@@ -140,9 +174,6 @@ public class ArenaUI : MonoBehaviour
     private void OnEnemyKilled(int coins)
     {
         coinTotal += coins;
-
-        // ステージテキストも即時更新（将来的にはウェーブ管理クラスと連携）
-        stageText.text = "WAVE  " + (coinTotal / 50 + 1).ToString("D2");
     }
 
     // ──────────────────────────────────────────────

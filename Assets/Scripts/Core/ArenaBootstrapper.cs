@@ -76,8 +76,9 @@ public class ArenaBootstrapper : MonoBehaviour
         // 4. AnchorPoint（PlayerController.FindNearestAnchor が使う）
         CreateAnchorPoints();
 
-        // 5. 敵（Player の参照を持つ）
-        SpawnEnemies(player);
+        // 5. WaveManager（EnemyController.OnEnemyDied を購読し敵をウェーブ管理する）
+        //    SpawnEnemies は WaveManager が担うため、旧 SpawnEnemies() は呼ばない
+        CreateWaveManager(player);
 
         // 6. Camera（Player の Transform が必要）
         SetupCamera(player);
@@ -198,27 +199,16 @@ public class ArenaBootstrapper : MonoBehaviour
     }
 
     // ──────────────────────────────────────────────
-    //  敵の初期スポーン
+    //  WaveManager 生成（敵管理を委譲）
     // ──────────────────────────────────────────────
 
-    private void SpawnEnemies(GameObject player)
+    private void CreateWaveManager(GameObject player)
     {
-        for (int i = 0; i < initialEnemyCount; i++)
-        {
-            // 等間隔で円周上にスポーン（プレイヤーから離れた位置）
-            float angle = (360f / initialEnemyCount) * i * Mathf.Deg2Rad;
-            Vector3 spawnPos = new Vector3(
-                Mathf.Cos(angle) * enemySpawnRadius,
-                Mathf.Sin(angle) * enemySpawnRadius,
-                0f
-            );
-
-            GameObject enemy = new GameObject("Enemy_" + i);
-            enemy.transform.position = spawnPos;
-
-            EnemyController ec = enemy.AddComponent<EnemyController>();
-            ec.playerTransform = player.transform;
-        }
+        GameObject waveObj = new GameObject("WaveManager");
+        WaveManager wm = waveObj.AddComponent<WaveManager>();
+        wm.playerTransform  = player.transform;
+        wm.spawnRadius      = enemySpawnRadius;
+        wm.baseEnemyCount   = initialEnemyCount;
     }
 
     // ──────────────────────────────────────────────
