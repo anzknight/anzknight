@@ -248,7 +248,14 @@ public class SlashTrailEffect : MonoBehaviour
 
         // ── Renderer：四角い火花 ──
         burstRenderer.renderMode = ParticleSystemRenderMode.Mesh;
-        burstRenderer.mesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+        Mesh burstQuadMesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+        if (burstQuadMesh == null)
+        {
+            GameObject tempQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            burstQuadMesh = tempQuad.GetComponent<MeshFilter>().sharedMesh;
+            Destroy(tempQuad);
+        }
+        burstRenderer.mesh = burstQuadMesh;
         burstRenderer.material = new Material(Shader.Find("Sprites/Default"));
         burstRenderer.sortingOrder = 15;
 

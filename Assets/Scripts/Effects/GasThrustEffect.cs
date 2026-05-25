@@ -244,7 +244,15 @@ public class GasThrustEffect : MonoBehaviour
         thrustRenderer.renderMode = ParticleSystemRenderMode.Mesh;
 
         // UnityのPrimitive Quadメッシュを使用（外部アセット不要）
-        thrustRenderer.mesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+        // Unity 6では "Quad.fbx" が廃止されたため GameObject.CreatePrimitive でフォールバック
+        Mesh quadMesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+        if (quadMesh == null)
+        {
+            GameObject tempQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quadMesh = tempQuad.GetComponent<MeshFilter>().sharedMesh;
+            Destroy(tempQuad);
+        }
+        thrustRenderer.mesh = quadMesh;
 
         // 加算ブレンド：重なった部分が明るくなり、炎っぽい発光感が出る
         Material sparkMaterial = new Material(Shader.Find("Sprites/Default"));
