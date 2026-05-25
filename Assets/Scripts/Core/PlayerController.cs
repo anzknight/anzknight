@@ -35,6 +35,7 @@
 // ============================================================
 
 using System;
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
@@ -231,6 +232,37 @@ public class PlayerController : MonoBehaviour
         // VisualManager へ「ダッシュ開始 + 現在の終点（暫定）」を通知
         // VisualManager 側で 0.2 秒後に実際の到達位置を終点として閃光を描く
         OnDashStarted?.Invoke(DashStartPosition, rb.position);
+
+        // 斬撃ダメージ判定を遅延コルーチンで実行
+        // （ダッシュが移動を完了するまでの 0.2 秒後に判定する）
+        StartCoroutine(DetectSlashDamage());
+    }
+
+    // ──────────────────────────────────────────────
+    //  斬撃ダメージ判定（コルーチン）
+    // ──────────────────────────────────────────────
+
+    /// <summary>
+    /// ダッシュ開始位置から到達位置まで LinecastAll を行い、
+    /// 通過した EnemyController にダメージを与える。
+    /// WaitForSecondsRealtime でタイムスケールの影響を受けずに遅延する。
+    /// </summary>
+    private IEnumerator DetectSlashDamage()
+    {
+        // ダッシュ移動が収まるまで待つ（タイムスケール非依存）
+        yield return new WaitForSecondsRealtime(0.2f);
+
+        Vector2 slashEnd = rb.position;
+
+        // ダッシュ開始点 → 到達点の線分上にいる全コライダーを取得
+        RaycastHit2D[] hits = Physics2D.LinecastAll(DashStartPosition, slashEnd);
+
+        foreach (RaycastHit2D hit in hits)
+        {
+            EnemyController enemy = hit.collider?.GetComponent<EnemyController>();
+            if (enemy != null)
+                enemy.TakeDamage(1);
+        }
     }
 
     // ──────────────────────────────────────────────
